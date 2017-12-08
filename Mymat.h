@@ -1,4 +1,5 @@
 
+
 #ifndef __MYMAT_H
 #define __MYMAT_H
 
@@ -16,23 +17,43 @@ class Mymat
 		Mymat();
 		Mymat(int l,int m,int n);
 		Mymat(int l,int m,int n,int num);
+		Mymat(Mymat &mat1);
 		~Mymat();
 		
 		void rank(int myid, int _size);
 		void inposition();
 		void outposition();
 		void createtype(int n);
+		void createfactor(int n, double mu);
+		void dividefactor();
+		void getF(int N);
 
 		void trans_x(Mymat &mat1);
 		void trans_y(Mymat &mat1);
 		void trans_z(Mymat &mat1);
+		void retrans_x(Mymat &mat1);
+		void retrans_y(Mymat &mat1);
+		void retrans_z(Mymat &mat1);
+		
+		
+	
+		Mymat& operator+=(const Mymat& mat1);	
+		Mymat& operator=(const Mymat& mat1);
+		Mymat& operator/=(double alpha);
+		Mymat operator-(const Mymat& mat1) const;
+		Mymat operator*(double alpha) const;
+
+		//(u^=2)  =  abs(u)^2*u  
+		Mymat& operator^=(int p);
 
 		fftw_complex* ele;
 
 	protected:
+		//the buff to send
 		double* inbuff_x(int i);
 		double* inbuff_y(int i);
 		double* inbuff_z(int i);
+		//the buff to receive
 		double* outbuff_x(int i);
 		double* outbuff_y(int i);
 		double* outbuff_z(int i);
@@ -47,7 +68,7 @@ class Mymat
 
 	
 	private:
-		int size;
+		int size,myid,status;
 		int size_l;
 		int size_m;
 		int size_n;
@@ -59,7 +80,8 @@ class Mymat
 		std::vector<int> xorder;
 		std::vector<int> yorder;
 		std::vector<int> zorder;
-
+		
+		std::vector<double> factor;
 		MPI::Datatype byte_type;
 		MPI::Datatype tensor1_type;
 		MPI::Datatype xtensor0_type;
