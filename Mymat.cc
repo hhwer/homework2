@@ -58,15 +58,7 @@ Mymat::~Mymat(void)
 		free(ele);
 		if(status)
 		{
-			byte_type.Free();
-			tensor1_type.Free();
-			xtensor0_type.Free();
-			ycolumn0_type.Free();
-			ymatrix0_type.Free();
-			ytensor0_type.Free();
-			zcolumn0_type.Free();
-			zmatrix0_type.Free();
-			ztensor0_type.Free();
+			typefree();
 		}
 	}
 
@@ -130,7 +122,7 @@ void Mymat::createtype(int n)
 	 ycolumn0_type = byte_type.Create_vector(n, 1, n);
 	ycolumn0_type.Commit();
 
-	 ymatrix0_type = ycolumn0_type.Create_hvector(n, 1, 2*sizeof(double));
+	 ymatrix0_type = ycolumn0_type.Create_hvector(n, 1, sizeof(fftw_complex));
 	ymatrix0_type.Commit();
 
 	 ytensor0_type = ymatrix0_type.Create_vector(n/size, 1, 1);
@@ -140,162 +132,28 @@ void Mymat::createtype(int n)
 	 zcolumn0_type = byte_type.Create_vector(n, 1, n*n);
 	zcolumn0_type.Commit();
 
-	 zmatrix0_type = zcolumn0_type.Create_hvector(n, 1, 											2*sizeof(double));
+	 zmatrix0_type = zcolumn0_type.Create_hvector(n, 1, 											sizeof(fftw_complex));
 	zmatrix0_type.Commit();
 
-	 ztensor0_type = zmatrix0_type.Create_hvector(n/size, 1, 										2*n*sizeof(double));
+	 ztensor0_type = zmatrix0_type.Create_hvector(n/size, 1, 										n*sizeof(fftw_complex));
 	ztensor0_type.Commit();
 
-
 }
 
-void Mymat::createfactor(int n,double mu)
+void Mymat::typefree()
 {
-	factor.resize(size_l*size_m*size_n);
-	if(2*myorder[2]<size)
-	{
-		for(int k=0;k<size_n;k++)
-		{
-			for(int j=0;j<size_m;j++)
-			{
-				for(int i=0;i<size_l;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] = 											-pow((myorder[2]*size_l+i),2) - mu;
-				}
-			}
-		}
-	}
-	else if(2*myorder[2]>size)
-	{
-		for(int k=0;k<size_n;k++)
-		{
-			for(int j=0;j<size_m;j++)
-			{
-				for(int i=0;i<size_l;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] = 											-pow((myorder[2]*size_l+i-n),2) - mu;
-				}
-			}
-		}
-
-	}
-	else
-	{	
-		for(int k=0;k<size_n;k++)
-		{
-			for(int j=0;j<size_m;j++)
-			{
-				for(int i=0;i<size_l/2;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] = 											-pow((myorder[2]*size_l+i),2) - mu;
-				}
-				for(int i=size_l/2;i<size_l;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] = 											-pow((myorder[2]*size_l+i-n),2) - mu;
-				}
-			}
-		}
-	}
-
-	if(2*myorder[1]<size)
-	{
-		for(int k=0;k<size_n;k++)
-		{
-			for(int j=0;j<size_m;j++)
-			{
-				for(int i=0;i<size_l;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] -= 											-pow((myorder[1]*size_m+j),2);
-				}
-			}
-		}
-	}
-	else if(2*myorder[1]>size)
-	{
-		for(int k=0;k<size_n;k++)
-		{
-			for(int j=0;j<size_m;j++)
-			{
-				for(int i=0;i<size_l;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] -= 											-pow((myorder[1]*size_m+j-n),2);
-				}
-			}
-		}
-
-	}
-	else
-	{	
-		for(int k=0;k<size_n;k++)
-		{
-			for(int j=0;j<size_m;j++)
-			{
-				for(int i=0;i<size_l/2;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] -= 											-pow((myorder[1]*size_m+j),2);
-				}
-				for(int i=size_l/2;i<size_l;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] -= 											-pow((myorder[1]*size_m+j-n),2);
-				}
-			}
-		}
-	}
-
-	if(2*myorder[0]<size)
-	{
-		for(int k=0;k<size_n;k++)
-		{
-			for(int j=0;j<size_m;j++)
-			{
-				for(int i=0;i<size_l;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] -= 											-pow((myorder[0]*size_n+k),2);
-				}
-			}
-		}
-	}
-	else if(2*myorder[0]>size)
-	{
-		for(int k=0;k<size_n;k++)
-		{
-			for(int j=0;j<size_m;j++)
-			{
-				for(int i=0;i<size_l;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] -= 											-pow((myorder[0]*size_n+k-n),2);
-				}
-			}
-		}
-
-	}
-	else
-	{	
-		for(int k=0;k<size_n;k++)
-		{
-			for(int j=0;j<size_m;j++)
-			{
-				for(int i=0;i<size_l/2;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] -= 											-pow((myorder[0]*size_n+k),2);
-				}
-				for(int i=size_l/2;i<size_l;i++)
-				{
-					factor[i+j*size_l+k*size_l*size_m] -= 											-pow((myorder[0]*size_n+k-n),2);
-				}
-			}
-		}
-	}
+	status = 0;
+	byte_type.Free();
+	tensor1_type.Free();
+	xtensor0_type.Free();
+	ycolumn0_type.Free();
+	ymatrix0_type.Free();
+	ytensor0_type.Free();
+	zcolumn0_type.Free();
+	zmatrix0_type.Free();
+	ztensor0_type.Free();
 }
 
-void Mymat::dividefactor(void)
-{
-	for(int i=0;i<size_l*size_m*size_n;i++)
-	{
-		ele[i][0] /= factor[i];
-		ele[i][1] /= factor[i];
-	}
-}
 
 double* Mymat::inbuff_x(int i)
 {
@@ -322,19 +180,25 @@ double* Mymat::inbuff_z(int i)
 
 double* Mymat::outbuff_x(int i)
 {
-	return &(ele[out_position_x[i]][0]);
+	int j =i;
+	j = (j+myorder[2])%size;
+	return &(ele[out_position_x[j]][0]);
 }
 
 
 double* Mymat::outbuff_y(int i)
 {
-	return &(ele[out_position_y[i]][0]);
+	int j =i;
+	j = (j+myorder[1])%size;
+	return &(ele[out_position_y[j]][0]);
 }
 
 
 double* Mymat::outbuff_z(int i)
 {
-	return &(ele[out_position_z[i]][0]);
+	int j =i;
+	j = (j+myorder[0])%size;
+	return &(ele[out_position_z[j]][0]);
 }
 
 
@@ -342,8 +206,18 @@ void Mymat::trans_x(Mymat &mat1)
 {
 	for(int i=0;i<size;i++)
     {
+		if(myid<=7)
+		{	
+			std::cout << myid <<"send to" << xorder[i] << " " << 
+			"receive from" << xorder[(size-i)%size] << std::endl;
+		}
     	MPI::COMM_WORLD.Sendrecv(
-    			outbuff_x(i), 1, xtensor0_type, xorder[i], 99,								mat1.inbuff_x(i), 1, tensor1_type, mat1.xorder[i],  99);
+    			outbuff_x(i), 1, xtensor0_type, xorder[i], 99,								mat1.inbuff_x((size-i)%size), 1, tensor1_type, xorder[(size-i)%size],  99);
+		if(myid<=7)
+		{	
+			std::cout << myid <<"finish send to" << xorder[i] << " " << 
+			"receive from" << xorder[(size-i)%size] << std::endl;
+		}
     	}
 }
 
@@ -352,7 +226,7 @@ void Mymat::trans_y(Mymat &mat1)
 	for(int i=0;i<size;i++)
 	{
 		MPI::COMM_WORLD.Sendrecv(
-			outbuff_y(i), 1, ytensor0_type, yorder[i], 99,								mat1.inbuff_y(i), 1, tensor1_type, mat1.yorder[i],  99);
+			outbuff_y(i), 1, ytensor0_type, yorder[i], 99,								mat1.inbuff_y((size-i)%size), 1, tensor1_type, yorder[(size-i)%size], 99);
 	}
 }
 
@@ -361,7 +235,7 @@ void Mymat::trans_z(Mymat &mat1)
 	for(int i=0;i<size;i++)
 	{
 		MPI::COMM_WORLD.Sendrecv(
-			outbuff_z(i), 1, ztensor0_type, zorder[i], 99,								mat1.inbuff_z(i), 1, tensor1_type, mat1.zorder[i],  99);
+			outbuff_z(i), 1, ztensor0_type, zorder[i], 99,								mat1.inbuff_z((size-i)%size), 1, tensor1_type, zorder[(size-i)%size], 99);
 	}
 }
 
@@ -369,7 +243,7 @@ void Mymat::retrans_x(Mymat &mat1)
 {
 	for(int i=0;i<size;i++)
     {
-    	MPI::COMM_WORLD.Sendrecv(																mat1.inbuff_x(i), 1, tensor1_type, mat1.xorder[i],  99,						outbuff_x(i), 1, xtensor0_type, xorder[i], 99);
+    	MPI::COMM_WORLD.Sendrecv(														mat1.inbuff_x(i), 1, tensor1_type, xorder[i],  99,							outbuff_x((size-i)%size), 1, xtensor0_type, xorder[(size-i)%size], 99);
     }
 }
 
@@ -377,7 +251,7 @@ void Mymat::retrans_y(Mymat &mat1)
 {
 	for(int i=0;i<size;i++)
 	{
-    	MPI::COMM_WORLD.Sendrecv(																mat1.inbuff_y(i), 1, tensor1_type, mat1.yorder[i],  99,						outbuff_y(i), 1, ytensor0_type, yorder[i], 99);
+    	MPI::COMM_WORLD.Sendrecv(														mat1.inbuff_y(i), 1, tensor1_type, yorder[i], 99,							outbuff_y((size-i)%size), 1, ytensor0_type, yorder[(size-i)%size], 99);
 	}
 }
 
@@ -385,7 +259,7 @@ void Mymat::retrans_z(Mymat &mat1)
 {
 	for(int i=0;i<size;i++)
 	{
-    	MPI::COMM_WORLD.Sendrecv(																mat1.inbuff_z(i), 1, tensor1_type, mat1.zorder[i],  99,						outbuff_z(i), 1, ztensor0_type, zorder[i], 99);
+    	MPI::COMM_WORLD.Sendrecv(														mat1.inbuff_z(i), 1, tensor1_type, zorder[i], 99,							outbuff_z((size-i)%size), 1, ztensor0_type, zorder[(size-i)%size], 99);
 	}
 }
 
@@ -457,22 +331,3 @@ Mymat Mymat::operator*(double alpha) const
 
 
 
-void Mymat::getF(int N)
-{
-	for(int k=0;k<size_n;k++)
-	{
-		double c1 = cos(((myorder[0]*size_n+k)/N-1)*M_PI);
-		double s1 = sin(((myorder[0]*size_n+k)/N-1)*M_PI);
-		for(int j=0;j<size_m;j++)
-		{
-			double c2 = cos(((myorder[1]*size_m+j)/N-1)*M_PI);
-			double s2 = sin(((myorder[1]*size_m+j)/N-1)*M_PI);
-			for(int i=0;i<size_l;i++)
-			{
-				ele[i][0] = s1+s2+sin(((myorder[0]*size_l+i)/N-1)*M_PI);
-				ele[i][1] = c1+c2+cos(((myorder[0]*size_l+i)/N-1)*M_PI);
-			}
-		}
-	}
-
-}

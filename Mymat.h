@@ -24,6 +24,7 @@ class Mymat
 		void inposition();
 		void outposition();
 		void createtype(int n);
+		void typefree();
 		void createfactor(int n, double mu);
 		void dividefactor();
 		void getF(int N);
