@@ -28,6 +28,7 @@ class Mymat
 		void createfactor(int n, double mu);
 		void dividefactor();
 		void getF(int N);
+		void getvalue();
 
 		void trans_x(Mymat &mat1);
 		void trans_y(Mymat &mat1);
@@ -35,20 +36,25 @@ class Mymat
 		void retrans_x(Mymat &mat1);
 		void retrans_y(Mymat &mat1);
 		void retrans_z(Mymat &mat1);
-		
-		
 	
+		void fft();
+		void ifft();
+		
+		double norm_inf();
+
 		Mymat& operator+=(const Mymat& mat1);	
 		Mymat& operator=(const Mymat& mat1);
 		Mymat& operator/=(double alpha);
 		Mymat operator-(const Mymat& mat1) const;
 		Mymat operator*(double alpha) const;
 
-		//(u^=2)  =  abs(u)^2*u  
+		//(u^=2)  =  abs(u)^p*u  
 		Mymat& operator^=(int p);
 
 		fftw_complex* ele;
 
+		std::vector<double> factor;
+	
 	protected:
 		//the buff to send
 		double* inbuff_x(int i);
@@ -82,7 +88,6 @@ class Mymat
 		std::vector<int> yorder;
 		std::vector<int> zorder;
 		
-		std::vector<double> factor;
 		MPI::Datatype byte_type;
 		MPI::Datatype tensor1_type;
 		MPI::Datatype xtensor0_type;

@@ -1,4 +1,13 @@
+/**
+* @file Mymat.cc
+* @brief class Mymat implement
+* @author hh
+* @version 0
+* @date 2017-12-09
+*/
 //
+
+
 #include "Mymat.h"
 
 Mymat::Mymat(void)
@@ -62,6 +71,14 @@ Mymat::~Mymat(void)
 		}
 	}
 
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 计算数据块在整个方体中所处的位置,并以其为起始,以增序排列各方向上的进程号
+*
+* @param _myid
+* @param _size
+*/
+/* ----------------------------------------------------------------------------*/
 void Mymat::rank(int _myid, int _size)
 {
 	myid = _myid;
@@ -84,6 +101,11 @@ void Mymat::rank(int _myid, int _size)
 
 
 
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 用来计算fft的内存块中,第i块的起始地址
+*/
+/* ----------------------------------------------------------------------------*/
 void Mymat::inposition(void)
 {
 	in_position.resize(size);
@@ -93,6 +115,11 @@ void Mymat::inposition(void)
 	}
 }
 
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 计算存储数据的内存块内,三个方向分别剖分成size份时,第i份开始的位置
+*/
+/* ----------------------------------------------------------------------------*/
 void Mymat::outposition(void)
 {
 	out_position_x.resize(size);
@@ -107,6 +134,13 @@ void Mymat::outposition(void)
 	}
 }
 
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 生成用于mpi传输的各类datatype
+*
+* @param n 每个数据块的尺寸
+*/
+/* ----------------------------------------------------------------------------*/
 void Mymat::createtype(int n)
 {
 	status = 1;
@@ -155,6 +189,15 @@ void Mymat::typefree()
 }
 
 
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 从x方向第i个进程来的数据的接受点
+*
+* @param i
+*
+* @returns   
+*/
+/* ----------------------------------------------------------------------------*/
 double* Mymat::inbuff_x(int i)
 {
 	int j =i;
@@ -178,6 +221,15 @@ double* Mymat::inbuff_z(int i)
 }
 
 
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 得到x方向上第i个进程将得到的数据的起始点
+*
+* @param i
+*
+* @returns   
+*/
+/* ----------------------------------------------------------------------------*/
 double* Mymat::outbuff_x(int i)
 {
 	int j =i;
@@ -202,23 +254,30 @@ double* Mymat::outbuff_z(int i)
 }
 
 
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 将各块数据传输到对应进程
+*
+* @param mat1
+*/
+/* ----------------------------------------------------------------------------*/
 void Mymat::trans_x(Mymat &mat1)
 {
 	for(int i=0;i<size;i++)
     {
-		if(myid<=7)
-		{	
-			std::cout << myid <<"send to" << xorder[i] << " " << 
-			"receive from" << xorder[(size-i)%size] << std::endl;
-		}
+//		if(myid<=7)
+//		{	
+//			std::cout << myid <<"send to" << xorder[i] << " " << 
+//			"receive from" << xorder[(size-i)%size] << std::endl;
+//		}
     	MPI::COMM_WORLD.Sendrecv(
     			outbuff_x(i), 1, xtensor0_type, xorder[i], 99,								mat1.inbuff_x((size-i)%size), 1, tensor1_type, xorder[(size-i)%size],  99);
-		if(myid<=7)
-		{	
-			std::cout << myid <<"finish send to" << xorder[i] << " " << 
-			"receive from" << xorder[(size-i)%size] << std::endl;
-		}
-    	}
+//		if(myid<=7)
+//		{	
+//			std::cout << myid <<"finish send to" << xorder[i] << " " << 
+//			"receive from" << xorder[(size-i)%size] << std::endl;
+//		}
+    }
 }
 
 void Mymat::trans_y(Mymat &mat1)
@@ -239,6 +298,13 @@ void Mymat::trans_z(Mymat &mat1)
 	}
 }
 
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 将mat1中数据按x方向返回各进程对应位置
+*
+* @param mat1
+*/
+/* ----------------------------------------------------------------------------*/
 void Mymat::retrans_x(Mymat &mat1)
 {
 	for(int i=0;i<size;i++)
@@ -262,6 +328,57 @@ void Mymat::retrans_z(Mymat &mat1)
     	MPI::COMM_WORLD.Sendrecv(														mat1.inbuff_z(i), 1, tensor1_type, zorder[i], 99,							outbuff_z((size-i)%size), 1, ztensor0_type, zorder[(size-i)%size], 99);
 	}
 }
+
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 沿x方向对每个向量做fft
+*/
+/* ----------------------------------------------------------------------------*/
+void Mymat::fft(void)
+{
+	fftw_plan p;
+	for(int i=0;i<size_m*size_n;i++)
+	{
+		p = fftw_plan_dft_1d(size_l, &ele[i*size_l], 											&ele[i*size_l], FFTW_FORWARD, FFTW_ESTIMATE);
+	}
+	fftw_free(p);
+}
+
+
+/* --------------------------------------------------------------------------*/
+/**
+* @brief x方向每个向量ifft
+*/
+/* ----------------------------------------------------------------------------*/
+void Mymat::ifft(void)
+{
+	fftw_plan p;
+	for(int i=0;i<size_m*size_n;i++)
+	{
+		p = fftw_plan_dft_1d(size_l, &ele[i*size_l], 											&ele[i*size_l], FFTW_BACKWARD, FFTW_ESTIMATE);
+	}
+	fftw_free(p);
+}
+
+
+
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 求最大模的平方
+*
+* @returns l_inf^2   
+*/
+/* ----------------------------------------------------------------------------*/
+double Mymat::norm_inf(void)
+{
+	double num = 0;
+	for(int i=0;i<size_l*size_m*size_n;i++)
+	{
+		num = std::max(num, ele[i][0]*ele[i][0]+ele[i][1]*ele[i][1]);
+	}
+	return num;
+}
+
 
 
 Mymat& Mymat::operator+=(const Mymat& mat1)
@@ -294,6 +411,15 @@ Mymat& Mymat::operator=(const Mymat& mat1)
 	return *this;
 }
 
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 每个元素都自乘上其模的p次方
+*
+* @param p 
+*
+* @returns   
+*/
+/* ----------------------------------------------------------------------------*/
 Mymat& Mymat::operator^=(int p)
 {
 	int val;
