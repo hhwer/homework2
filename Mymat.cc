@@ -25,11 +25,13 @@ Mymat::Mymat(int l, int m, int n )
 	size_n = n;
 	status = 0;
 	ele = (fftw_complex*) malloc( sizeof(fftw_complex)*l*m*n );
-	for(int i=0;i<l*m*n;i++)
-	{	
-		ele[i][0] = 0.0;
-		ele[i][1] = 0.0;
+	double* p=&ele[0][0];
+	for(int i=0;i<2*l*m*n-1;i++)
+	{
+		*p = 0.0;
+		p++;
 	}
+	*p = 0.0;
 }
 
 
@@ -41,11 +43,13 @@ Mymat::Mymat(int l, int m, int n,int num)
 	status = 0;
 	double num0 = (double)num; 
 	ele = (fftw_complex*) malloc( sizeof(fftw_complex)*l*m*n );
-	for(int i=0;i<l*m*n;i++)
+	double* p=&ele[0][0];
+	for(int i=0;i<2*l*m*n-1;i++)
 	{
-		ele[i][0] = num0;
-		ele[i][1] = 0.0;
+		*p = num0;
+		p++;
 	}
+	*p = num0;
 }
 
 
@@ -56,10 +60,11 @@ Mymat::Mymat(Mymat& mat1)
 	size_n = mat1.size_n;
 	status = 0;
 	ele = (fftw_complex*) malloc( sizeof(fftw_complex)*size_l*size_m*size_n );
-	for(int i=0;i<size_l*size_m*size_n;i++)
+	double* p=&ele[0][0];
+	for(int i=0;i<2*size_l*size_m*size_n-1;i++)
 	{
-		ele[i][0] = 0.0;
-		ele[i][1] = 0.0;
+		*p = 0.0;
+		p++;
 	}
 }
 Mymat::~Mymat(void)
@@ -372,10 +377,21 @@ void Mymat::ifft(void)
 double Mymat::norm_inf(void)
 {
 	double num = 0;
-	for(int i=0;i<size_l*size_m*size_n;i++)
+	double num1;
+	double* p = &ele[0][0];
+	for(int i=0;i<size_l*size_m*size_n-1;i++)
 	{
-		num = std::max(num, ele[i][0]*ele[i][0]+ele[i][1]*ele[i][1]);
+		num1 = *p*(*p);
+		p++;
+		num1 += *p*(*p);
+		p++;
+		num = std::max(num, num1);
+//		num = std::max(num, ele[i][0]*ele[i][0]+ele[i][1]*ele[i][1]);
 	}
+	num1 = *p*(*p);
+	p++;
+	num1 += *p*(*p);
+	num = std::max(num, num1);
 	return num;
 }
 
@@ -383,31 +399,47 @@ double Mymat::norm_inf(void)
 
 Mymat& Mymat::operator+=(const Mymat& mat1)
 {
-	for(int i=0;i<size_l*size_m*size_n;i++)
+	double* p  = &ele[0][0];
+	double* p1 = &mat1.ele[0][0];
+	for(int i=0;i<2*size_l*size_m*size_n-1;i++)
 	{
-		ele[i][0] += mat1.ele[i][0];
-		ele[i][1] += mat1.ele[i][0];
+		*p += *p1;
+		p++;
+		p1++;
+//		ele[i][0] += mat1.ele[i][0];
+//		ele[i][1] += mat1.ele[i][0];
 	}
+	*p += *p1;
 	return *this;
 }
 
 Mymat& Mymat::operator/=(double alpha)
 {
-	for(int i=0;i<size_l*size_m*size_n;i++)
+	double* p = &ele[0][0];
+	for(int i=0;i<2*size_l*size_m*size_n-1;i++)
 	{
-		ele[i][0] /= alpha;
-		ele[i][1] /= alpha;
+		*p /= alpha;
+		p++;
+//		ele[i][0] /= alpha;
+//		ele[i][1] /= alpha;
 	}
+	*p /= alpha;
 	return *this;
 }
 
 Mymat& Mymat::operator=(const Mymat& mat1)
 {
-	for(int i=0;i<size_l*size_m*size_n;i++)
-	{	
-		ele[i][0] = mat1.ele[i][0];
-		ele[i][1] = mat1.ele[i][1];
+	double* p  = &ele[0][0];
+	double* p1 = &mat1.ele[0][0];
+	for(int i=0;i<2*size_l*size_m*size_n-1;i++)
+	{
+		*p = *p1;
+		p++;
+		p1++;
+//		ele[i][0] = mat1.ele[i][0];
+//		ele[i][1] = mat1.ele[i][1];
 	}
+	*p = *p1;
 	return *this;
 }
 
@@ -420,38 +452,74 @@ Mymat& Mymat::operator=(const Mymat& mat1)
 * @returns   
 */
 /* ----------------------------------------------------------------------------*/
-Mymat& Mymat::operator^=(int p)
+Mymat& Mymat::operator^=(int q)
 {
 	int val;
-	for(int i=0;i<size_l*size_m*size_n;i++)
+	double* p = &ele[0][0];
+	for(int i=0;i<size_l*size_m*size_n-1;i++)
 	{
-		val = ele[i][0]*ele[i][0] + ele[i][1]*ele[i][1];
-		ele[i][0] *= val;
-		ele[i][1] *= val;
+		val = *(p+1);
+		val = val*val;
+		val += *p*(*p);
+		*p *= val;
+		p++;
+		*p *= val;
+		p++;
+//		val = ele[i][0]*ele[i][0] + ele[i][1]*ele[i][1];
+//		ele[i][0] *= val;
+//		ele[i][1] *= val;
 	}
+	val = *(p+1);
+	val = val*val;
+	val += *p*(*p);
+	*p *= val;
+	p++;
+	*p *= val;
 	return *this;
 }
 
 Mymat Mymat::operator-(const Mymat& mat1) const
 {
 	Mymat mat2(size_l,size_m,size_n);
-	for(int i=0;i<size_l*size_m*size_n;i++)
+	double* p  = &ele[0][0];
+	double* p1 = &mat1.ele[0][0];
+	double* p2 = &mat2.ele[0][0];
+	for(int i=0;i<2*size_l*size_m*size_n-1;i++)
 	{
-		mat2.ele[i][0] = ele[i][0] - mat1.ele[i][0];
-		mat2.ele[i][1] = ele[i][1] - mat1.ele[i][0];
+		*p2 = *p - *p1;
+		p++;
+		p1++;
+		p2++;
+//		mat2.ele[i][0] = ele[i][0] - mat1.ele[i][0];
+//		mat2.ele[i][1] = ele[i][1] - mat1.ele[i][1];
 	}
+	*p2 = *p - *p1;
 	return mat2;
 }
 
 
+/* --------------------------------------------------------------------------*/
+/**
+* @brief 为什么乘法操作通过指针实现和指标实现的结果有差异?
+*
+* @param alpha
+*
+* @returns   
+*/
+/* ----------------------------------------------------------------------------*/
 Mymat Mymat::operator*(double alpha) const
 {	
 	Mymat mat2(size_l,size_m,size_n);
-	for(int i=0;i<size_l*size_m*size_n;i++)
+	double* p  = &ele[0][0];
+	double* p2 = &mat2.ele[0][0];
+	for(int i=0;i<2*size_l*size_m*size_n-1;i++)
 	{
-		mat2.ele[i][0] = ele[i][0] * alpha;
-		mat2.ele[i][1] = ele[i][1] * alpha;
+		*p2 = alpha * *p;
+		p++;
+//		mat2.ele[i][0] = ele[i][0] * alpha;  
+//		mat2.ele[i][1] = ele[i][1] * alpha;
 	}
+	*p2 = alpha * *p;
 	return mat2;
 }
 

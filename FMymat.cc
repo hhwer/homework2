@@ -157,11 +157,21 @@ void Mymat::createfactor(int N,double mu)
 /* ----------------------------------------------------------------------------*/
 void Mymat::dividefactor(void)
 {
-	for(int i=0;i<size_l*size_m*size_n;i++)
+	double* p = &ele[0][0];
+	double* f = &factor[0];
+	for(int i=0;i<size_l*size_m*size_n-1;i++)
 	{
-		ele[i][0] /= factor[i];
-		ele[i][1] /= factor[i];
+		*p /= *f;
+		p++;
+		*p /= *f;
+		p++;
+		f++;
+//		ele[i][0] /= factor[i];
+//		ele[i][1] /= factor[i];
 	}
+	*p /= *f;
+	p++;
+	*p /= *f;
 }
 
 

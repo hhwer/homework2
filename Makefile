@@ -1,6 +1,6 @@
 
 main: test
-	mpirun -np 8 ./test 
+	mpirun -np 8 ./test 64
 test: main.o Mymat.o FMymat.o 
 	mpic++ -o test main.o FMymat.o Mymat.o Mymat.h -lfftw3  -Wall -std=c++14
 main.o: main.cc

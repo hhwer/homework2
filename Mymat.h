@@ -48,8 +48,8 @@ class Mymat
 		Mymat operator-(const Mymat& mat1) const;
 		Mymat operator*(double alpha) const;
 
-		//(u^=2)  =  abs(u)^p*u  
-		Mymat& operator^=(int p);
+		//(u^=2)  =  abs(u)^2*u  
+		Mymat& operator^=(int q);
 
 		fftw_complex* ele;
 
