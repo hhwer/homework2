@@ -27,6 +27,7 @@ class Mymat
 		void typefree();
 		void createfactor(int n, double mu);
 		void dividefactor();
+		void multipfactor();
 		void getF(int N);
 		void getvalue();
 

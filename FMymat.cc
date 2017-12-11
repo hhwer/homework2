@@ -90,13 +90,13 @@ void Mymat::createfactor(int N,double mu)
 	{	
 		for(int k=0;k<size_n;k++)
 		{
-			for(int j=0;j<size_m;j++)
+			for(int i=0;i<size_l;i++)
 			{
-				for(int i=0;i<size_l/2;i++)
+				for(int j=0;j<size_m/2;j++)
 				{
 					factor[i+j*size_l+k*size_l*size_m] -= 											pow((myorder[1]*size_m+j),2);
 				}
-				for(int i=size_l/2;i<size_l;i++)
+				for(int j=size_m/2;j<size_m;j++)
 				{
 					factor[i+j*size_l+k*size_l*size_m] -= 											pow((myorder[1]*size_m+j-N),2);
 				}
@@ -133,15 +133,15 @@ void Mymat::createfactor(int N,double mu)
 	}
 	else
 	{	
-		for(int k=0;k<size_n;k++)
+		for(int i=0;i<size_l;i++)
 		{
 			for(int j=0;j<size_m;j++)
 			{
-				for(int i=0;i<size_l/2;i++)
+				for(int k=0;k<size_n/2;k++)
 				{
 					factor[i+j*size_l+k*size_l*size_m] -= 											pow((myorder[0]*size_n+k),2);
 				}
-				for(int i=size_l/2;i<size_l;i++)
+				for(int k=size_n/2;k<size_n;k++)
 				{
 					factor[i+j*size_l+k*size_l*size_m] -= 											pow((myorder[0]*size_n+k-N),2);
 				}
@@ -175,6 +175,24 @@ void Mymat::dividefactor(void)
 }
 
 
+void Mymat::multipfactor(void)
+{
+	double* p = &ele[0][0];
+	double* f = &factor[0];
+	for(int i=0;i<size_l*size_m*size_n-1;i++)
+	{
+		*p *= *f;
+		p++;
+		*p *= *f;
+		p++;
+		f++;
+//		ele[i][0] /= factor[i];
+//		ele[i][1] /= factor[i];
+	}
+	*p *= *f;
+	p++;
+	*p *= *f;
+}
 /* --------------------------------------------------------------------------*/
 /**
 * @brief 生成右端项
@@ -194,8 +212,10 @@ void Mymat::getF(int N)
 			double s2 = sin(((myorder[1]*size_m+j)/N-1)*M_PI);
 			for(int i=0;i<size_l;i++)
 			{
-				ele[i+j*size_l+k*size_l*size_m][0] = 												s1*s2*sin(((myorder[2]*size_l+i)/N-1)*M_PI);
-				ele[i+j*size_l+k*size_l*size_m][1] = 												c1*c2*cos(((myorder[2]*size_l+i)/N-1)*M_PI);
+//				ele[i+j*size_l+k*size_l*size_m][0] = 												s1*s2*sin(((myorder[2]*size_l+i)/N-1)*M_PI);
+//				ele[i+j*size_l+k*size_l*size_m][1] = 												c1*c2*cos(((myorder[2]*size_l+i)/N-1)*M_PI);
+				ele[i+j*size_l+k*size_l*size_m][0] = 												2 * sin(((myorder[2]*size_l+i+0.0)/N-1)*M_PI);
+				ele[i+j*size_l+k*size_l*size_m][1] = 												2 * cos(((myorder[2]*size_l+i+0.0)/N-1)*M_PI);
 			}
 		}
 	}

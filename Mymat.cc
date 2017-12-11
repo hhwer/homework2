@@ -135,7 +135,7 @@ void Mymat::outposition(void)
 	{
 		out_position_x[i] = i*size_l*size_m*size_n/size; 
 		out_position_y[i] = i*size_l*size_m*size_n/size; 
-		out_position_z[i] = i*size_l; 
+		out_position_z[i] = i*size_l*size_m/size; 
 	}
 }
 
@@ -228,7 +228,7 @@ double* Mymat::inbuff_z(int i)
 
 /* --------------------------------------------------------------------------*/
 /**
-* @brief 得到x方向上第i个进程将得到的数据的起始点
+* @brief 得到x方向上第i个进程(即xorder[i])将得到的数据的起始点
 *
 * @param i
 *
@@ -345,6 +345,7 @@ void Mymat::fft(void)
 	for(int i=0;i<size_m*size_n;i++)
 	{
 		p = fftw_plan_dft_1d(size_l, &ele[i*size_l], 											&ele[i*size_l], FFTW_FORWARD, FFTW_ESTIMATE);
+		fftw_execute(p);
 	}
 	fftw_free(p);
 }
@@ -361,6 +362,7 @@ void Mymat::ifft(void)
 	for(int i=0;i<size_m*size_n;i++)
 	{
 		p = fftw_plan_dft_1d(size_l, &ele[i*size_l], 											&ele[i*size_l], FFTW_BACKWARD, FFTW_ESTIMATE);
+		fftw_execute(p);
 	}
 	fftw_free(p);
 }
@@ -514,7 +516,8 @@ Mymat Mymat::operator*(double alpha) const
 	double* p2 = &mat2.ele[0][0];
 	for(int i=0;i<2*size_l*size_m*size_n-1;i++)
 	{
-		*p2 = alpha * *p;
+		*p2 = alpha * (*p);
+		p2++;
 		p++;
 //		mat2.ele[i][0] = ele[i][0] * alpha;  
 //		mat2.ele[i][1] = ele[i][1] * alpha;

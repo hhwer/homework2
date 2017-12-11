@@ -7,10 +7,13 @@ int main(int argc, char** argv)
 	int n,Max,myid,totalsize,size;
 	time_t start,stop,start1,stop1;
 	double err[2],total[2];
+	double mu=1.5;
 	int N=pow(2,4);
 	if(argc>1)
 	{
 		N = atoi(argv[1]);
+		if(argc>2)
+			mu = atof(argv[2]);
 	}
 
 
@@ -20,11 +23,15 @@ int main(int argc, char** argv)
 	totalsize = MPI::COMM_WORLD.Get_size();
 	size = pow(totalsize+1.0, 1.0/3);
 	n = N/size;
-	Max = 100;
-	double mu=1.5;
+	Max = 2;
 	double n3 = pow(N,3);
 	start = clock();
 	start1 = time(NULL);
+
+	int aaa =0;
+	while(aaa==1);
+	{
+	}
 
 
 	Mymat mat0(n,n,n,10);
@@ -40,15 +47,16 @@ int main(int argc, char** argv)
 	mat0.outposition();
 	mat1.inposition();
 	mat0.createfactor(N,mu);
+	mat0 = F;
+	mat0/=2.0;
 
 	
 	for(int j=0;j<Max;j++)
     {	
 		U = mat0;
-		mat0.trans_z(mat1);
 
-		mat0^=3;
-		mat0 = mat0-F-(U*mu);
+//		mat0^=3;
+//		mat0 = ((mat0-F)-(U*mu));
 
 		//3d-fft
 		mat0.trans_x(mat1);
@@ -61,8 +69,8 @@ int main(int argc, char** argv)
 		mat1.fft();
 
 		mat0.retrans_z(mat1);
-		mat0/=n3;
-		mat0.dividefactor();
+//		mat0.dividefactor();
+		mat0.multipfactor();
 		mat0.trans_x(mat1);
 		//ifft
 		mat1.ifft();
@@ -78,7 +86,8 @@ int main(int argc, char** argv)
 		mat1.ifft();
 
 		mat0.retrans_z(mat1);
-
+		mat0/=n3;
+		
 		err[0] = (U-mat0).norm_inf();
 		err[1] = U.norm_inf();
 		MPI::COMM_WORLD.Allreduce(err, total, 2, MPI_DOUBLE, MPI_MAX);
