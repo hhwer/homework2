@@ -29,6 +29,7 @@ class Mymat
 		void dividefactor();
 		void multipfactor();
 		void getF(int N);
+		void getF1(int N);
 		void getvalue();
 
 		void trans_x(Mymat &mat1);

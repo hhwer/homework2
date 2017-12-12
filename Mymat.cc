@@ -456,7 +456,7 @@ Mymat& Mymat::operator=(const Mymat& mat1)
 /* ----------------------------------------------------------------------------*/
 Mymat& Mymat::operator^=(int q)
 {
-	int val;
+	double val;
 	double* p = &ele[0][0];
 	for(int i=0;i<size_l*size_m*size_n-1;i++)
 	{

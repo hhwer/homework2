@@ -204,23 +204,45 @@ void Mymat::getF(int N)
 {
 	for(int k=0;k<size_n;k++)
 	{
-		double c1 = cos(((myorder[0]*size_n+k)/N-1)*M_PI);
-		double s1 = sin(((myorder[0]*size_n+k)/N-1)*M_PI);
+		double c1 = cos((2.0*(myorder[0]*size_n+k)/N-1)*M_PI);
+		double s1 = sin((2.0*(myorder[0]*size_n+k)/N-1)*M_PI);
 		for(int j=0;j<size_m;j++)
 		{
-			double c2 = cos(((myorder[1]*size_m+j)/N-1)*M_PI);
-			double s2 = sin(((myorder[1]*size_m+j)/N-1)*M_PI);
+			double c2 = cos((2.0*(myorder[1]*size_m+j)/N-1)*M_PI);
+			double s2 = sin((2.0*(myorder[1]*size_m+j)/N-1)*M_PI);
 			for(int i=0;i<size_l;i++)
 			{
-//				ele[i+j*size_l+k*size_l*size_m][0] = 												s1*s2*sin(((myorder[2]*size_l+i)/N-1)*M_PI);
-//				ele[i+j*size_l+k*size_l*size_m][1] = 												c1*c2*cos(((myorder[2]*size_l+i)/N-1)*M_PI);
-				ele[i+j*size_l+k*size_l*size_m][0] = 												2 * sin(((myorder[2]*size_l+i+0.0)/N-1)*M_PI);
-				ele[i+j*size_l+k*size_l*size_m][1] = 												2 * cos(((myorder[2]*size_l+i+0.0)/N-1)*M_PI);
+				ele[i+j*size_l+k*size_l*size_m][0] = 												s1*s2*sin((2.0*(myorder[2]*size_l+i)/N-1)*M_PI);
+				ele[i+j*size_l+k*size_l*size_m][1] = 												c1*c2*cos((2.0*(myorder[2]*size_l+i)/N-1)*M_PI);
 			}
 		}
 	}
 
 }
+
+/* --------------------------------------------------------------------------*/
+/**
+* @brief F=sin(x)+icos(x)时的右端项
+*
+* @param N
+*/
+/* ----------------------------------------------------------------------------*/
+void Mymat::getF1(int N)
+{
+	for(int k=0;k<size_n;k++)
+	{
+		for(int j=0;j<size_m;j++)
+		{
+			for(int i=0;i<size_l;i++)
+			{
+				ele[i+j*size_l+k*size_l*size_m][0] = 												2 * sin((2*(myorder[2]*size_l+i+0.0)/N-1)*M_PI);
+				ele[i+j*size_l+k*size_l*size_m][1] = 												2 * cos((2*(myorder[2]*size_l+i+0.0)/N-1)*M_PI);
+			}
+		}
+	}
+
+}
+
 
 void Mymat::getvalue(void)
 {
