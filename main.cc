@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 	totalsize = MPI::COMM_WORLD.Get_size();
 	size = pow(totalsize+1.0, 1.0/3);
 	n = N/size;
-	Max = 100;
+	Max = 1000;
 	double n3 = pow(N,3);
 	start = clock();
 	start1 = time(NULL);
