@@ -1,0 +1,250 @@
+\documentclass[UTF8]{ctexart}
+\usepackage{CJKutf8}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{cite}
+\usepackage{indentfirst}
+
+  \author{黄晃 数院 1701210098 }
+  \title{并行第三次上机作业}
+\begin{document}
+  \maketitle
+我们的问题为:
+\paragraph{}
+在三维区域$\Omega =[-\pi,\pi]$上求解问题
+$$
+-\Delta U + \|U\|^{2}U = f(x),\ x\in \Omega.
+$$
+其中$U\in \mathcal{C}$
+$$
+f(x) = sin(x_1)sin(x_2)sin(x_3)+icos(x_1)cos(x_2)cos(x_3).
+$$
+U满足周期边值条件
+\section{算法原理}
+\subsection{伪谱方法}
+对于周期函数f(x),其傅里叶展开为
+$$
+f(x) = \sum\limits _{m=-\infty }^{\infty}\hat{f}_{m}e^{jmx},\ x\in (-\pi,\pi)
+$$
+其中
+$$
+\hat{f}_{m}=\int_{-\pi}^{\pi}f(x)e^{-jmx}dx.
+$$
+伪谱法实际上相当于考虑f在空间$S_{n}$中的投影
+$$
+I_n(f(x)) = \sum\limits_{m=-n}^{n-1}\hat{f}_{m}e^{jmx},\ x\in (-\pi,\pi)
+$$
+其中$S_n$为次数$\leq n$的三角多项式的空间.
+\paragraph{基函数}
+取插值节点为
+$x_{i,j,k}=(\frac{i\pi}{n}-\pi,\frac{j\pi}{n}-\pi,\frac{i\pi}{n}-\pi)\ i,j,k=0,1,2,\cdots,2n-1$
+那么有
+$$
+I_n(f(x)) = \sum\limits_{i,j,k=0}^{2n-1}f(x_{i,j,k})g_{i,j,k}(x),\ x\in (-\pi,\pi)
+$$
+其中$g_{i,j,k}(x)$是$S_{n}$中满足$g_{i,j,k}(x_{i1,j1,k1})=\delta_{(i,j,k)(i1,j1,k1)}$的三角多项式.
+\paragraph{}
+利用正交性,我们有
+$$
+g_{i,j,k}(x) = \frac{1}{(2n)^3} \sum\limits_{p,l,m=-n}^{n-1}e^{j(p,l,m)(x-x_{i,j,k})}
+$$
+为了简洁起见,下面在不引起混淆的情况下,用p代替(p,l,m),用i代替(i,j,k).
+\paragraph{}
+因此我们有
+\begin{equation}
+ \begin{split}
+ I_{n}f(x) &= \sum\limits_{i=0}^{2n-1}f(x_{i})\frac{1}{(2n)^3} \sum\limits_{p=-n}^{n-1}e^{jp(x-x_i)}     \\
+   &= \sum\limits_{p=-n}^{n-1}e^{jp(x+\pi)} \frac{1}{(2n)^3} \sum\limits_{i=0}^{2n-1}f(x_{i})e^{-jp(x_i+\pi)}
+ \end{split}
+\end{equation}
+若我们记
+$$
+\hat{f}_p = \frac{1}{(2n)^3} \sum\limits_{i=0}^{2n-1}f(x_{i})e^{-jp(x_i+\pi)}
+$$
+则
+$$
+I_n(f(x)) =  \sum\limits_{p=-n}^{n-1}\hat{f}_p e^{jp(x+\pi)}
+$$
+注意到在节点$x_{i}$上有$I_nf(x_i)=f(x_i))$成立,所以我们建立$f_i,\ i=0,1,\cdots,2n-1$与$\hat{f}_p,\ p=-n,-n+1,\cdots,n-1$之间的一个一一映射.
+\paragraph{}
+将$x_i$的值代入,我们有
+\begin{equation}
+ \begin{split}
+ f_i &= \sum\limits_{p=-n}^{n-1}\hat{f}_p e^{jpi\pi/n}     \\
+  \hat{f}_p &= \frac{1}{(2n)^3} \sum\limits_{i=0}^{2n-1}f(x_{i})e^{-jpi\pi/n} ,\ p=-n,-n+1\cdots,n-1
+ \end{split}
+\end{equation}
+注意到
+$$
+e^{jpi\pi/n}=e^{j(p+2n)i\pi/n}
+$$
+我们记$\hat{f}_p=\hat{f}_{p-2n},\ p=n,n+1,\cdots,2n-1$,则有
+\begin{equation}
+ \begin{split}
+ f_i &= \sum\limits_{p=0}^{2n-1}\hat{f}_p e^{jpi\pi/n}     \\
+  \hat{f}_p &= \frac{1}{(2n)^3} \sum\limits_{i=0}^{2n-1}f{i}e^{-jpi\pi/n}  ,\ p=0,1\cdots,2n-1
+ \end{split}
+\end{equation}
+但是基函数的次数p不会随着改变,上面等式只是在节点处成立,我们可以将投影$I_n(f)$改写成
+$$
+I_nf(x) =  \sum\limits_{p=0}^{n-1}\hat{f}_p e^{jp(x+\pi)} + \sum\limits_{p=n}^{2n-1}\hat{f}_p e^{j(p-2n)(x+\pi)}
+$$
+所以对于$\Delta$算子,我们有
+$$
+\Delta I_n(f(x)) =  \sum\limits_{p=0}^{n-1}-p^2\hat{f}_p e^{jp(x+\pi)} + \sum\limits_{p=n}^{2n-1}-(p-2n)^2\hat{f}_p e^{j(p-2n)(x+\pi)}
+$$
+由此,我们得到了$f(x_i)$与$\Delta f(x_i)$的Fourier系数的关系.
+\subsection{FFTW}
+提供了1维的FFTW函数,具体作用如下
+\begin{equation}
+ \begin{split}
+ forward & : \   (a_0,a_1,\cdots,a_{N-1}) \rightarrow (b_0,b_1,\cdots,b_{N-1})     \\
+  b_p &=\  \sum\limits_{i=0}^{N-1}a_ie^{-2jpi\pi/N}  ,\ p=0,1\cdots,N-1
+ \end{split}
+\end{equation}
+
+\begin{equation}
+ \begin{split}
+ backard & : \   (a_0,a_1,\cdots,a_{N-1}) \rightarrow (b_0,b_1,\cdots,b_{N-1})     \\
+  b_p &=\  \sum\limits_{i=0}^{N-1}a_ie^{2jpi\pi/N}  ,\ p=0,1\cdots,N-1
+ \end{split}
+\end{equation}
+对于1维情形,若令N=2n,我们有
+\begin{equation}
+ \begin{split}
+ [\hat{f}_0,\hat{f}_1,\cdots,\hat{f}_{2n-1}] & = \  \frac{1}{2n}  forward( [f_0,f_1,\cdots,f_{2n-1}] )  \\
+  [f_0,f_1,\cdots,f_{2n-1}] &=\ backward( [\hat{f}_0,\hat{f}_1,\cdots,\hat{f}_{2n-1}] )
+ \end{split}
+\end{equation}
+\subsection{三维FFT的实现}
+回到我们需要的三维情形
+
+\begin{equation}
+ \begin{split}
+f_{i,j,k} & = \sum\limits_{p,l,m=0}^{2n-1}\hat{f}_{p,l,m} e^{j(pi+lj+mk)\pi/n} \\
+ &= \sum\limits_{p=0}^{2n-1} \sum\limits_{l=0}^{2n-1} \sum\limits_{m=0}^{2n-1}\hat{f}_{p,l,m} e^{j(pi+lj+mk)\pi/n} \\
+ &= \sum\limits_{p=0}^{2n-1} \left[\sum\limits_{l=0}^{2n-1} \left(\sum\limits_{m=0}^{2n-1}\hat{f}_{p,l,m} e^{jmk\pi/n}\right) e^{jlj\pi/n} \right] e^{jpi\pi/n}
+ \end{split}
+\end{equation}
+
+\begin{equation}
+ \begin{split}
+\hat{f}_{i,j,k} & = \frac{1}{(2n)^3}\sum\limits_{i,j,k=0}^{2n-1}f_{i,j,k} e^{-j(pi+lj+mk)\pi/n} \\
+ &= \sum\limits_{i=0}^{2n-1} \sum\limits_{j=0}^{2n-1} \sum\limits_{k=0}^{2n-1} \frac{1}{(2n)^3}f_{i,j,k} e^{-j(pi+lj+mk)\pi/n} \\
+ &= \sum\limits_{i=0}^{2n-1} \frac{1}{2n} \left[\sum\limits_{j=0}^{2n-1} \frac{1}{2n} \left(\sum\limits_{k=0}^{2n-1} \frac{1}{2n} f_{i,j,k} e^{-jmk\pi/n}\right) e^{-jlj\pi/n} \right] e^{-jpi\pi/n}
+ \end{split}
+\end{equation}
+可以看到,三维的DFT其实就是按照三个方向依次进行一维的FFT,逆变换也类似.
+
+\subsection{算法}
+利用
+$$
+FFT(\Delta U -\mu U) = FFT(\|U\|^2U-F-\mu U)
+$$
+设计迭代格式(其中$\mu>0$,使得系数$-p^2-mu>0$成立)
+\begin{itemize}
+  \item step1:\ 选择初始点$X_0$,得到$U_0,F$,i=0
+  \item step2:\ 计算$A=FFT(|U_i|^2U_i-F-\mu U)$
+  \item step3:\ 将A视为$FFT(\Delta U_{i+1}-\mu U)$,推出$B=FFT(U_{i+1})$的值
+  \item step4:\ 求$U_{i+1}=\frac{1}{(2n)^3}IFFT(B)$
+  \item step5:\ 若 $\frac{U^{+}-U}{U}$ 足够小or$U=0$,则停止,否则i=i+1,转step2
+\end{itemize}
+
+\section{并行部分}
+取点为每个方向N个,基于之前的讨论,我们要求N是偶数,此外,根据一维FFT的实现方法,选择N为2的整数次幂是较合理的做法,不过本程序依旧支持所有的N为偶数的情形.
+\paragraph{进程数}
+支持进程数为$size^3$的所有选择,但是要求$size^2\|N$要成立.下面记$n=\frac{N}{size}$
+\paragraph{子进程存储}
+我们将进程号myid表示成$myid=myorder[0]*size^2+myorder[1]*size+myorder[2]$,用该进程存储整个正方体中z方向第myorder[0]层,y方向第myoder[1]层,x方向第myorder[2]层的一个小正方体的数据A. 则正方体规模为n.\\
+此外,我们需要一个x方向长N,y方向长n,z方向高为$\frac{n}{size}$的存储空间B,用来进行某一个方向的fft以及ifft.A,B的存储顺序均为$x>y>z$,即保证x方向数据是连续存储的.
+\paragraph{子进程计算任务}
+\begin{itemize}
+\item 在进行x方向的fft时,该进程将获取同处于x方向上的共size个进程中的z方向上第myorder[2]部分的数据
+\item 在进行y方向的fft时,该进程将获取同处于y方向上的共size个进程中的z方向上第myorder[1]部分的数据
+\item 在进行z方向的fft时,该进程将获取同处于z方向上的共size个进程中的y方向上第myorder[0]部分的数据
+\end{itemize}
+以n=4,size=2为例,详述第0号进程的信息交互
+\begin{itemize}
+\item 在进行x方向的fft时,进程0获取同处于x方向上进程1中最上两层的数据,即[:,:,0:1],并将其直接接受在长方体B的[n:2n-1,:,:]部分,同时将0进程中A的最上两层存入B的[0:n-1,:,:]中.这样进程0中的B中就有了连续存储的n/size*n个长为N的向量,正好是x方向上这size个进程中需要做1维fft的上两层的向量.
+\item 在进行y方向的fft时,进程0将获取同处于y方向上进程1中最上两层的数据,即[:,:,0:1],与x方向不同的是,我们将利用mpi的传输,将其转置存入B中,这将使得B中存有的连续的长为N的数据恰好是整个大正方体中y方向的向量.
+\item  在进行z方向的fft时,进程0将获取同处于y方向上进程1中y=0,1对应的两层数据,即[:,0:1,:],与x方向不同的是,我们将利用mpi的传输,将其转置存入B中,这将使得B中存有的连续的长为N的数据恰好是整个大正方体中z方向的向量.
+\end{itemize}
+\paragraph{}
+在如上进行完x方向上的fft后,我们将数据返回原来的进程中的A的对应位置,然后进行y方向,再进行z方向fft.ifft的做法与之类似.
+\paragraph{传输顺序}
+详细的,一个进程一次fft需要进行size次传输(本进程内从A到B对应数据用MPI进程到自身的数据传输完成),为了使交互顺利进行,我们对这size个进程编号:$1,2\cdots,size$,每个进程i用sendrecv函数依次向$i,i+1,i+2,\cdots,i-1$发送数据,同事从$i,i-1,i-2\cdots,i+1$接受数据.
+\paragraph{B中的FFT}
+对B中的第i个向量做FFT时,直接给fftw的形参in,out均赋值第i个向量头所在的地址,即一个double*[2]即可实现该向量的fft,同时结果直接覆盖原数据,而不需要另外的存储抑或是赋值操作.
+\section{数值实验}
+\subsection{算法的检验}
+为了检验算法的正确性,单独提供了一个已知真解的问题.其中
+$$
+U = sin(x) + icos(x) 
+$$
+$$
+F = 2*U;
+$$
+\paragraph{}
+取参数$\mu=1.5$,对于N=64的问题规模,迭代在54步收敛到了真解.(因为三角函数的fourier级数就是本身,所以之前描述的利用fft表示$\Delta$的方法是精确的,所以离散问题的解恰好是真解).这说明本程序至少能正确解决该低频问题.
+\subsection{原问题的计算结果}
+\paragraph{停止条件}
+以相对误差$\frac{U^{+}-U}{U}$的无穷范数$\|\frac{U^{+}-U}{U}\|_{infty}<1e-12$作为停止条件.
+\paragraph{初始值}
+初始值取为$U=0$
+\paragraph{参数}
+参数$\mu=1.5$,问题规模选择为$2^k,k=4,5,6,7,8$,进程数选为$m=(2p)^3,p=0,1,2,3$,其中p=0时即为对应的串行程序.
+\paragraph{运行时间}
+统计两个时间:一个是子进程花费的cpu时间clock,一个是系统时间time.
+\subsection{数值结果}
+给定进程数8,对于所有的规模的计算结果见表1.
+\begin{table}\caption{8进程}
+\centering
+\begin{tabular}{|r|r|r|r|}
+\hline
+N & ite & cpu time&system time  \\ \hline
+   16 & 24 &0.036841 &0  \\
+    32&  24 & 0.195604 & 0 \\
+    64 & 24 & 1.98767 & 2\\
+    128 & 24 & 19.3418&20 \\
+    256 & 24 & 120.938&303 \\
+\hline
+\end{tabular}
+\end{table}
+给定规模N=128,对不同的进程数的计算结果见表2
+\begin{table}\caption{N=128}
+\centering
+\begin{tabular}{|r|r|r|r|} 
+\hline
+m & ite & cpu time&system time  \\ \hline
+   1 & 24 & 52.7837& 53\\
+    8& 24 &19.3418&20\\
+    64 & 24 & 2.56927 & 21\\
+\hline
+\end{tabular}
+\end{table}
+
+最后,我们测试一组N不是2的幂次的情形.具体的,取N=144(使得1,4,9均整除N),结果见表3
+\begin{table}\caption{N=144}
+\centering
+\begin{tabular}{|r|r|r|r|}
+\hline
+m & ite & cpu time&system time  \\ \hline
+   1 & 24& 100.351 &131 \\
+    8&  24& 42.9628 &75	 \\ 
+    27& 24& 19.5504 & 85 \\
+    64 & 24&20.3636 & 135\\
+\hline
+\end{tabular}
+\subsection{结果分析}
+\begin{itemize}
+\item 由表1,对给定的8进程,随着问题规模的倍增,由于迭代次数没变,所以每个进程花费的时间接近之前的8倍
+\item 由表2,对给定的问题规模,8进程相对于串行加速比为3,而64进程相对于8进程而言单个进程的cpu时间只需1/8,这说明在该规模下,fft的开销占比远大于传输的开销
+\item 在只有4核的基础上,当进程数比8大时,实际计算时间不再变小.这符合我们的预期,因为总的数据传输以及计算量是常数,而8以上的进程,cpu只是将运算能力平分给各进程,所以不可能再有提高.但是值得注意的是进程从27增加到64时cpu时间并没有如预期减少.联系到计算时的卡顿,估计是计算机性能的原因.
+\item 计算发现,只改变$\mu$的值,影响的只是迭代步数(太小的$\mu$会导致不收敛),但是最后收敛到的解是同一个,进一步验证了算法的正确性.
+\end{itemize}
+\end{table}
+
+
+
+\end{document} 
